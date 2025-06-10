@@ -2,7 +2,7 @@ syntax = "proto3"; // Protobuf 버전 지정
 
 package chat; // 패키지 이름 정의
 
-option go_package = "example.com/grpc-chat-app/gen;gen"; // 생성될 Go 패키지 경로 및 이름 지정
+option go_package = "./gen;gen"; // 생성될 Go 패키지 경로 및 이름 지정
 
 import "google/protobuf/timestamp.proto"; // 타임스탬프 사용을 위해 import
 
