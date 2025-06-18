@@ -9,7 +9,7 @@ help:
 	@echo "  kafka-down  - Stop Kafka cluster"
 	@echo "  server      - Run gRPC chat server"
 	@echo "  consumer    - Run Kafka message consumer"
-	@echo "  client      - Run chat client (specify USER=<username>)"
+	@echo "  client      - Run interactive chat client (specify USER=<username>)"
 	@echo "  build       - Build all binaries"
 	@echo "  proto       - Generate protobuf code"
 	@echo "  test        - Run tests"
@@ -19,7 +19,16 @@ help:
 	@echo "  make kafka-up"
 	@echo "  make server"
 	@echo "  make consumer"
-	@echo "  make client USER=alice"
+	@echo "  make client USER=alice    # Interactive chat client"
+	@echo ""
+	@echo "How to test chat:"
+	@echo "  1. Start Kafka: make kafka-up"
+	@echo "  2. Start server: make server (in terminal 1)"
+	@echo "  3. Start consumer: make consumer (in terminal 2)"
+	@echo "  4. Start clients: make client USER=alice (in terminal 3)"
+	@echo "                   make client USER=bob (in terminal 4)"
+	@echo "  5. Type messages in client terminals and see real-time chat!"
+	@echo "  6. Use '/quit' or Ctrl+C to exit clients"
 
 # Kafka 클러스터 시작
 kafka-up:
@@ -50,10 +59,14 @@ consumer:
 client:
 	@if [ -z "$(USER)" ]; then \
 		echo "Please specify USER: make client USER=<username>"; \
+		echo "Example: make client USER=alice"; \
 		exit 1; \
 	fi
-	@echo "Starting chat client for user: $(USER)"
+	@echo "Starting interactive chat client for user: $(USER)"
+	@echo "Type messages and press Enter to send"
+	@echo "Use '/quit' or Ctrl+C to exit"
 	@echo "You can also use: go run . client $(USER)"
+	@echo "========================================"
 	go run . client $(USER)
 
 # 빌드

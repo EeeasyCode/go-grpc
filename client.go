@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 	"time"
 
 	pb "example.com/grpc-chat-app/gen"
@@ -78,13 +82,18 @@ func (c *ChatClient) ConnectAndListen(ctx context.Context) error {
 				return fmt.Errorf("failed to receive message: %w", err)
 			}
 
-			// 수신한 메시지 출력
+			// 수신한 메시지 출력 (개선된 형식)
 			timestamp := "unknown"
 			if msg.Timestamp != nil {
 				timestamp = msg.Timestamp.AsTime().Format("15:04:05")
 			}
-			
-			fmt.Printf("[%s] %s: %s\n", timestamp, msg.Id, msg.Content)
+
+			// 내가 보낸 메시지인지 확인
+			if msg.Id == c.userID {
+				fmt.Printf("\r\033[K✓ [%s] You: %s\n[%s] > ", timestamp, msg.Content, c.userID)
+			} else {
+				fmt.Printf("\r\033[K📩 [%s] %s: %s\n[%s] > ", timestamp, msg.Id, msg.Content, c.userID)
+			}
 		}
 	}
 }
@@ -102,7 +111,7 @@ func (c *ChatClient) SendMessage(ctx context.Context, content string) error {
 		return fmt.Errorf("failed to send message: %w", err)
 	}
 
-	log.Printf("Message sent: %s", content)
+	// 메시지 전송 성공 (서버에서 다시 받아서 표시되므로 여기서는 로그 제거)
 	return nil
 }
 
@@ -120,34 +129,80 @@ func runClient(userID string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// Graceful shutdown 처리
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
 	// 연결 및 메시지 수신을 별도 고루틴에서 실행
 	go func() {
 		if err := client.ConnectAndListen(ctx); err != nil {
-			log.Printf("Listen error: %v", err)
+			if ctx.Err() == nil { // context가 취소되지 않은 상태에서의 에러만 로깅
+				log.Printf("Listen error: %v", err)
+			}
 		}
 	}()
 
-	// 잠시 대기 후 테스트 메시지 전송
-	time.Sleep(2 * time.Second)
+	// 잠시 대기하여 연결 안정화
+	time.Sleep(1 * time.Second)
 
-	// 몇 개의 테스트 메시지 전송
-	messages := []string{
-		fmt.Sprintf("Hello from %s!", userID),
-		fmt.Sprintf("This is %s testing the chat", userID),
-		fmt.Sprintf("%s says goodbye!", userID),
-	}
+	fmt.Printf("\n=== Chat Client Started ===\n")
+	fmt.Printf("User: %s\n", userID)
+	fmt.Printf("Server: %s\n", serverAddr)
+	fmt.Printf("Commands:\n")
+	fmt.Printf("  Type message and press Enter to send\n")
+	fmt.Printf("  Type '/quit' or press Ctrl+C to exit\n")
+	fmt.Printf("===========================\n\n")
 
-	for i, msg := range messages {
-		if err := client.SendMessage(ctx, msg); err != nil {
-			log.Printf("Failed to send message %d: %v", i+1, err)
+	// 사용자 입력을 받기 위한 스캐너
+	scanner := bufio.NewScanner(os.Stdin)
+
+	// 사용자 입력 처리 루프
+	go func() {
+		for {
+			fmt.Printf("[%s] > ", userID)
+
+			if !scanner.Scan() {
+				// 입력 종료 (EOF)
+				cancel()
+				return
+			}
+
+			input := strings.TrimSpace(scanner.Text())
+
+			// 빈 입력 무시
+			if input == "" {
+				continue
+			}
+
+			// 종료 명령어 처리
+			if input == "/quit" || input == "/exit" {
+				fmt.Println("Goodbye!")
+				cancel()
+				return
+			}
+
+			// 메시지 전송
+			if err := client.SendMessage(ctx, input); err != nil {
+				if ctx.Err() == nil { // context가 취소되지 않은 상태에서의 에러만 로깅
+					log.Printf("Failed to send message: %v", err)
+				}
+				continue
+			}
 		}
-		time.Sleep(3 * time.Second) // 메시지 간 간격
+	}()
+
+	// 종료 시그널 또는 컨텍스트 취소 대기
+	select {
+	case <-sigChan:
+		fmt.Println("\nReceived interrupt signal. Shutting down...")
+		cancel()
+	case <-ctx.Done():
+		// 컨텍스트 취소됨 (사용자가 /quit 입력하거나 다른 이유)
 	}
 
-	// 추가로 10초 대기하여 다른 클라이언트의 메시지를 수신할 수 있도록 함
-	time.Sleep(10 * time.Second)
-	
-	log.Printf("Client %s finished", userID)
+	// 정리 대기
+	time.Sleep(500 * time.Millisecond)
+	log.Printf("Client %s disconnected", userID)
 }
 
 // main 함수 - 클라이언트를 독립적으로 실행하기 위해 주석 해제됨
@@ -162,7 +217,7 @@ func runClientMain() {
 		fmt.Println("Example: go run client.go alice")
 		return
 	}
-	
+
 	userID := os.Args[1]
 	runClient(userID)
-} 
+}

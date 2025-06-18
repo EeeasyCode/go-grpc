@@ -1,7 +1,5 @@
 # grpc-chat-app with Kafka
 
-Kafka를 메시지 브로커로 사용하는 분산 gRPC 채팅 애플리케이션입니다. 이 프로젝트는 기존의 단순한 gRPC 채팅 시스템을 Kafka 기반의 확장 가능한 마이크로서비스 아키텍처로 확장한 것입니다.
-
 ## 🏗️ 시스템 아키텍처
 
 ### 전체 구조도
@@ -97,20 +95,13 @@ Kafka를 메시지 브로커로 사용하는 분산 gRPC 채팅 애플리케이�
 
 ### 설치 및 설정
 
-1. **저장소 클론**
-
-```bash
-git clone <repository-url>
-cd grpc-chat-app
-```
-
-2. **의존성 설치**
+1. **의존성 설치**
 
 ```bash
 go mod tidy
 ```
 
-3. **Kafka 클러스터 시작**
+2. **Kafka 클러스터 시작**
 
 ```bash
 make kafka-up
@@ -118,7 +109,7 @@ make kafka-up
 docker-compose up -d
 ```
 
-4. **Protobuf 코드 생성** (필요한 경우)
+3. **Protobuf 코드 생성** (필요한 경우)
 
 ```bash
 make proto
@@ -363,23 +354,6 @@ Message sent: Hello World!
 - [Apache Kafka Documentation](https://kafka.apache.org/documentation/)
 - [Sarama - Go Kafka Client](https://github.com/IBM/sarama)
 
-## 🤝 기여
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## 📄 라이선스
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 작성자
-
-- **개발자** - 초기 구현 및 Kafka 통합
-
-## 🙏 감사의 말
-
-- [joinc.co.kr](https://joinc.co.kr)의 Kafka 채팅 튜토리얼에서 영감을 받았습니다.
-- gRPC 및 Kafka 커뮤니티의 훌륭한 문서와 예제들.

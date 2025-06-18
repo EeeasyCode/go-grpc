@@ -42,11 +42,11 @@ type UserConnection struct {
 
 // Connection: 개별 클라이언트 연결을 나타내는 구조체
 type Connection struct {
-	pb.UnimplementedBroadcastServer        // 항상 임베드해야 함
+	pb.UnimplementedBroadcastServer                                 // 항상 임베드해야 함
 	stream                          pb.Broadcast_CreateStreamServer // 클라이언트에게 메시지를 보내기 위한 스트림
-	id                              string                            // 연결 ID (예: 사용자 ID)
-	active                          bool                              // 연결 활성 상태
-	error                           chan error                        // 에러 전파를 위한 채널
+	id                              string                          // 연결 ID (예: 사용자 ID)
+	active                          bool                            // 연결 활성 상태
+	error                           chan error                      // 에러 전파를 위한 채널
 }
 
 // Pool: 활성 연결들의 풀(모음)을 관리하는 구조체
@@ -55,8 +55,8 @@ type Pool struct {
 	Connection                      []*Connection
 	Producer                        sarama.SyncProducer // Kafka Producer
 	KafkaConfig                     *KafkaConfig
-	ServerID                        string // 현재 서버의 고유 ID
-	mutex                           sync.RWMutex // 연결 풀 보호를 위한 뮤텍스
+	ServerID                        string            // 현재 서버의 고유 ID
+	mutex                           sync.RWMutex      // 연결 풀 보호를 위한 뮤텍스
 	MessageProcessor                *MessageProcessor // 임베드된 메시지 프로세서
 }
 
@@ -66,7 +66,7 @@ func NewPool(kafkaConfig *KafkaConfig, serverID string) (*Pool, error) {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll // 모든 복제본으로부터 확인 대기
 	config.Producer.Retry.Max = 5                    // 최대 재시도 횟수
-	config.Producer.Return.Successes = true         // 성공 응답 반환
+	config.Producer.Return.Successes = true          // 성공 응답 반환
 
 	// Kafka Producer 생성
 	producer, err := sarama.NewSyncProducer(kafkaConfig.Brokers, config)
@@ -226,7 +226,7 @@ func (p *Pool) BroadcastMessage(ctx context.Context, msg *pb.Message) (*pb.Close
 		return nil, fmt.Errorf("failed to send message to Kafka: %w", err)
 	}
 
-	log.Printf("Message sent to Kafka - Topic: %s, Partition: %d, Offset: %d", 
+	log.Printf("Message sent to Kafka - Topic: %s, Partition: %d, Offset: %d",
 		p.KafkaConfig.Topic, partition, offset)
 
 	return &pb.Close{}, nil
