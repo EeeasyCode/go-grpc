@@ -4,6 +4,9 @@ go 1.24.2
 
 require (
 	github.com/IBM/sarama v1.42.1
+	github.com/google/uuid v1.6.0
+	github.com/gorilla/mux v1.8.1
+	github.com/gorilla/websocket v1.5.3
 	google.golang.org/grpc v1.72.1
 	google.golang.org/protobuf v1.36.5
 )
